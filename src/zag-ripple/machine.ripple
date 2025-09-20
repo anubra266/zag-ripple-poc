@@ -12,7 +12,7 @@ import type {
 } from "@zag-js/core"
 import { createScope, INIT_STATE, MachineStatus } from "@zag-js/core"
 import { compact, ensure, isFunction, isString, toArray, warn } from "@zag-js/utils"
-import { track, effect } from "ripple"
+import { track, effect, flushSync } from "ripple"
 import { createBindable } from "./bindable.ripple"
 import { createRefs } from "./refs.ripple"
 
@@ -45,7 +45,11 @@ export function useMachine(
     get scope() {
       return @scope
     },
-    flush: (fn) => fn(), // RippleJS doesn't need explicit flushing
+    flush: (fn) => {
+      queueMicrotask(() => {
+        flushSync(() => fn())
+      })
+    },
     getContext() {
       return ctx
     },
@@ -105,7 +109,11 @@ export function useMachine(
     track: () => {}, // Simple track for RippleJS
     refs,
     computed,
-    flush: (fn: VoidFunction) => fn(),
+    flush: (fn) => {
+      queueMicrotask(() => {
+        flushSync(() => fn())
+      })
+    },
     scope: @scope,
     choose,
   })
