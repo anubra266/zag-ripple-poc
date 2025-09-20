@@ -15,6 +15,7 @@ import { compact, ensure, isFunction, isString, toArray, warn } from "@zag-js/ut
 import { track, effect, flushSync } from "ripple"
 import { createBindable } from "./bindable.ripple"
 import { createRefs } from "./refs.ripple"
+import { createTrack } from "./track.ripple"
 
 
 
@@ -22,10 +23,8 @@ export function useMachine(
   machine,
   userProps = {},
 ) {
-  console.log("useMachine", machine, userProps)
   let scope = track(() => {
     const { id, ids, getRootNode } = access(userProps)
-    console.log("scope", id, ids, getRootNode)
     return createScope({ id, ids, getRootNode })
   })
 
@@ -106,7 +105,7 @@ export function useMachine(
     send,
     action,
     guard,
-    track: () => {}, // Simple track for RippleJS
+    track: createTrack,
     refs,
     computed,
     flush: (fn) => {
