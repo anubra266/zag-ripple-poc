@@ -6,7 +6,7 @@ export component App() {
     <Accordion />
 
     <div class="info">
-      <p>{"This demonstrates RippleJS integration with Zag state machines."}</p>
+      <p>{"This demonstrates RippleJS integration with "}<a href="http://zagjs.com/" target="_blank">{"Zag"}</a>{" state machines."}</p>
       <p>
         {"Edit "}
         <code>{"src/App.ripple"}</code>

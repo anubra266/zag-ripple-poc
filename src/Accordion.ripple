@@ -1,7 +1,12 @@
 import * as accordion from "@zag-js/accordion";
-import { normalizeProps, useMachine } from "@zag-js/ripple";
-import { accordionControls, accordionData } from "@zag-js/shared"
+import { normalizeProps, useMachine } from "./zag-ripple/index.ripple";
 import { track } from "ripple";
+
+const accordionData = [
+  { id: "home", label: "Home" },
+  { id: "about", label: "About" },
+  { id: "contact", label: "Contact" },
+]
 
 export component Accordion() {
   let service = useMachine(accordion.machine, {
@@ -10,7 +15,7 @@ export component Accordion() {
 
   let api = track(() => accordion.connect(service, normalizeProps));
 
-  <div>
+  <div class="accordion">
     <h1>{'Accordion Example'}</h1>
     
     <div {...@api.getRootProps()}>
