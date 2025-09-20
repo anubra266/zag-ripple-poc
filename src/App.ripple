@@ -12,6 +12,8 @@ export component App() {
         <code>{"src/App.ripple"}</code>
         {" to get started."}
       </p>
+
+      <p>{"Repo at "} <a href="https://github.com/anubra266/zag-ripple-poc" target="_blank">{"https://github.com/anubra266/zag-ripple-poc"}</a></p>
     </div>
   </div>
 
