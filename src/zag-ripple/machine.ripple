@@ -1,0 +1,309 @@
+import type {
+  ActionsOrFn,
+  BindableContext,
+  ChooseFn,
+  ComputedFn,
+  EffectsOrFn,
+  GuardFn,
+  Machine,
+  MachineSchema,
+  Params,
+  Service,
+} from "@zag-js/core"
+import { createScope, INIT_STATE, MachineStatus } from "@zag-js/core"
+import { compact, ensure, isFunction, isString, toArray, warn } from "@zag-js/utils"
+import { track, effect } from "ripple"
+import { createBindable } from "./bindable.ripple"
+import { createRefs } from "./refs.ripple"
+
+
+
+export function useMachine(
+  machine,
+  userProps = {},
+) {
+  console.log("useMachine", machine, userProps)
+  let scope = track(() => {
+    const { id, ids, getRootNode } = access(userProps)
+    console.log("scope", id, ids, getRootNode)
+    return createScope({ id, ids, getRootNode })
+  })
+
+  const debug = (...args: any[]) => {
+    if (machine.debug) console.log(...args)
+  }
+
+  let props = track(() => 
+    machine.props?.({ props: compact(access(userProps)), scope: @scope }) ?? access(userProps)
+  )
+  
+  const prop = createProp(() => @props)
+
+  const context = machine.context?.({
+    prop,
+    bindable: createBindable,
+    get scope() {
+      return @scope
+    },
+    flush: (fn) => fn(), // RippleJS doesn't need explicit flushing
+    getContext() {
+      return ctx
+    },
+    getComputed() {
+      return computed
+    },
+    getRefs() {
+      return refs
+    },
+    getEvent() {
+      return getEvent()
+    },
+  })
+
+  const ctx = {
+    get(key) {
+      return context?.[key]?.get()
+    },
+    set(key, value) {
+      context?.[key]?.set(value)
+    },
+    initial(key) {
+      return context?.[key]?.initial
+    },
+    hash(key) {
+      const current = context?.[key]?.get()
+      return context?.[key]?.hash(current)
+    },
+  }
+
+  let effects = new Map()
+  let transitionRef = { current: null }
+
+  let previousEventRef = { current: null }
+  let eventRef = { current: { type: "" } }
+
+  const getEvent = () => ({
+    ...eventRef.current,
+    current() {
+      return eventRef.current
+    },
+    previous() {
+      return previousEventRef.current
+    },
+  })
+
+  const refs = createRefs(machine.refs?.({ prop, context: ctx }) ?? {})
+
+  const getParams = () => ({
+    state: getState(),
+    context: ctx,
+    event: getEvent(),
+    prop,
+    send,
+    action,
+    guard,
+    track: () => {}, // Simple track for RippleJS
+    refs,
+    computed,
+    flush: (fn: VoidFunction) => fn(),
+    scope: @scope,
+    choose,
+  })
+
+  const action = (keys) => {
+    const strs = isFunction(keys) ? keys(getParams()) : keys
+    if (!strs) return
+    const fns = strs.map((s) => {
+      const fn = machine.implementations?.actions?.[s]
+      if (!fn) warn(`[zag-js] No implementation found for action "${JSON.stringify(s)}"`)
+      return fn
+    })
+    for (const fn of fns) {
+      fn?.(getParams())
+    }
+  }
+
+  const guard = (str) => {
+    if (isFunction(str)) return str(getParams())
+    return machine.implementations?.guards?.[str](getParams())
+  }
+
+  const effectFn = (keys) => {
+    const strs = isFunction(keys) ? keys(getParams()) : keys
+    if (!strs) return
+    const fns = strs.map((s) => {
+      const fn = machine.implementations?.effects?.[s]
+      if (!fn) warn(`[zag-js] No implementation found for effect "${JSON.stringify(s)}"`)
+      return fn
+    })
+    const cleanups = []
+    for (const fn of fns) {
+      const cleanup = fn?.(getParams())
+      if (cleanup) cleanups.push(cleanup)
+    }
+    return () => cleanups.forEach((fn) => fn?.())
+  }
+
+  const choose = (transitions) => {
+    return toArray(transitions).find((t) => {
+      let result = !t.guard
+      if (isString(t.guard)) result = !!guard(t.guard)
+      else if (isFunction(t.guard)) result = t.guard(getParams())
+      return result
+    })
+  }
+
+  const computed = (key) => {
+    ensure(machine.computed, () => `[zag-js] No computed object found on machine`)
+    const fn = machine.computed[key]
+    return fn({
+      context: ctx,
+      event: eventRef.current,
+      prop,
+      refs,
+      scope: @scope,
+      computed: computed,
+    })
+  }
+
+  const state = createBindable(() => ({
+    defaultValue: machine.initialState({ prop }),
+    onChange(nextState: string, prevState: string | undefined) {
+      // compute effects: exit -> transition -> enter
+
+      // exit effects
+      if (prevState) {
+        const exitEffects = effects.get(prevState)
+        exitEffects?.()
+        effects.delete(prevState)
+      }
+
+      // exit actions
+      if (prevState && prevState !== INIT_STATE) {
+        action(machine.states[prevState]?.exit)
+      }
+
+      // transition actions
+      if (transitionRef.current?.actions) {
+        action(transitionRef.current.actions)
+      }
+
+      // enter actions
+      action(machine.states[nextState]?.entry)
+
+      // enter effects
+      const enterEffects = machine.states[nextState]?.effects
+      if (enterEffects) {
+        const cleanup = effectFn(enterEffects)
+        if (cleanup) effects.set(nextState, cleanup)
+      }
+
+      // root entry actions
+      if (prevState === INIT_STATE) {
+        action(machine.entry)
+        const cleanup = effectFn(machine.effects)
+        if (cleanup) effects.set(INIT_STATE, cleanup)
+      }
+    },
+  }))
+
+  const getState = () => ({
+    ...state,
+    matches(...values) {
+      const current = state.get()
+      return values.includes(current)
+    },
+    hasTag(tag) {
+      const current = state.get()
+      return !!machine.states[current]?.tags?.includes(tag)
+    },
+  })
+
+  let status = MachineStatus.NotStarted
+
+  // Initialize machine with RippleJS effect
+  effect(() => {
+    queueMicrotask(() => {
+      const started = status === MachineStatus.Started
+      status = MachineStatus.Started
+      debug(started ? "rehydrating..." : "initializing...")
+
+      // start the transition
+      const initialState = machine.initialState({ prop })
+      state.set(initialState)
+    })
+
+    return () => {
+      debug("unmounting...")
+      status = MachineStatus.Stopped
+
+      effects.forEach((fn) => fn?.())
+      effects.clear()
+      transitionRef.current = null
+
+      queueMicrotask(() => {
+        action(machine.exit)
+      })
+    }
+  })
+
+  const send = (event: any) => {
+    queueMicrotask(() => {
+      if (status !== MachineStatus.Started) return
+
+      previousEventRef.current = eventRef.current
+      eventRef.current = event
+
+      let currentState = state.get()
+
+      const transitions = 
+        machine.states[currentState]?.on?.[event.type] ?? 
+        machine.on?.[event.type]
+
+      const transition = choose(transitions)
+      if (!transition) return
+
+      // save current transition
+      transitionRef.current = transition
+      const target = transition.target ?? currentState
+
+      debug("transition", event.type, transition.target || currentState, `(${transition.actions})`)
+
+      const changed = target !== currentState
+      if (changed) {
+        state.set(target)
+      } else if (transition.reenter && !changed) {
+        // reenter will re-invoke the current state
+        state.invoke?.(currentState, currentState)
+      } else {
+        // call transition actions
+        action(transition.actions ?? [])
+      }
+    })
+  }
+
+  machine.watch?.(getParams())
+
+  return {
+    state: getState(),
+    send,
+    context: ctx,
+    prop,
+    scope: @scope,
+    refs,
+    computed,
+    event: getEvent(),
+    getStatus: () => status,
+  } 
+}
+
+function access(userProps) {
+  return isFunction(userProps) ? userProps() : userProps;
+}
+
+function createProp(props) {
+  return (key) => {
+    if (!key) return access(props)
+    return access(props)[key]
+  }
+}
