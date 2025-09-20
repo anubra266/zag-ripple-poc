@@ -11,6 +11,7 @@ const accordionData = [
 export component Accordion() {
   let service = useMachine(accordion.machine, {
     id: "accordion-1",
+    defaultValue: ["about"]
   });
 
   let api = track(() => accordion.connect(service, normalizeProps));
