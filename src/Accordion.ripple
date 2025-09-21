@@ -18,6 +18,7 @@ export component Accordion() {
 
   <div class="accordion">
     <h1>{'Accordion Example'}</h1>
+
     
     <div {...@api.getRootProps()}>
     for (const item of accordionData) {
@@ -39,5 +40,10 @@ export component Accordion() {
         </div>
     }
     </div>
+
+    <button onClick={() => @api.setValue(["home"])}>{"Set home"}</button>
+    <button onClick={() => @api.setValue(["about"])}>{"Set about"}</button>
+    <button onClick={() => @api.setValue(["contact"])}>{"Set contact"}</button>
+
   </div>
 }
