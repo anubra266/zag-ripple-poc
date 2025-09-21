@@ -17,7 +17,10 @@ import { createBindable } from "./bindable.ripple"
 import { createRefs } from "./refs.ripple"
 import { createTrack } from "./track.ripple"
 
-
+function access(userProps) {
+  if (isFunction(userProps)) return userProps()
+  return userProps
+}
 
 export function useMachine(
   machine,
@@ -35,12 +38,8 @@ export function useMachine(
   let props = track(() => 
     machine.props?.({ props: compact(access(userProps)), scope: @scope }) ?? access(userProps)
   )
-
-  effect(()=>{
-    console.log(@props)
-  })
   
-  const prop = createProp(() => @props)
+  const prop = useProp(() => @props)
 
   const context = machine.context?.({
     prop,
@@ -48,11 +47,7 @@ export function useMachine(
     get scope() {
       return @scope
     },
-    flush: (fn) => {
-      queueMicrotask(() => {
-        flushSync(() => fn())
-      })
-    },
+    flush: flush,
     getContext() {
       return ctx
     },
@@ -99,6 +94,18 @@ export function useMachine(
     },
   })
 
+  const getState = () => ({
+    ...state,
+    matches(...values) {
+      const current = state.get()
+      return values.includes(current)
+    },
+    hasTag(tag) {
+      const current = state.get()
+      return !!machine.states[current]?.tags?.includes(tag)
+    },
+  })
+
   const refs = createRefs(machine.refs?.({ prop, context: ctx }) ?? {})
 
   const getParams = () => ({
@@ -112,11 +119,7 @@ export function useMachine(
     track: createTrack,
     refs,
     computed,
-    flush: (fn) => {
-      queueMicrotask(() => {
-        flushSync(() => fn())
-      })
-    },
+    flush,
     scope: @scope,
     choose,
   })
@@ -169,7 +172,7 @@ export function useMachine(
     const fn = machine.computed[key]
     return fn({
       context: ctx,
-      event: eventRef.current,
+      event: getEvent(),
       prop,
       refs,
       scope: @scope,
@@ -181,7 +184,7 @@ export function useMachine(
     defaultValue: machine.initialState({ prop }),
     onChange(nextState: string, prevState: string | undefined) {
       // compute effects: exit -> transition -> enter
-      console.log(nextState)
+
       // exit effects
       if (prevState) {
         const exitEffects = effects.get(prevState)
@@ -199,15 +202,9 @@ export function useMachine(
         action(transitionRef.current.actions)
       }
 
-      // enter actions
-      action(machine.states[nextState]?.entry)
-
       // enter effects
-      const enterEffects = machine.states[nextState]?.effects
-      if (enterEffects) {
-        const cleanup = effectFn(enterEffects)
-        if (cleanup) effects.set(nextState, cleanup)
-      }
+      const cleanup = effectFn( machine.states[nextState]?.effects)
+      if (cleanup) effects.set(nextState, cleanup)
 
       // root entry actions
       if (prevState === INIT_STATE) {
@@ -215,20 +212,11 @@ export function useMachine(
         const cleanup = effectFn(machine.effects)
         if (cleanup) effects.set(INIT_STATE, cleanup)
       }
+
+      // enter actions
+      action(machine.states[nextState]?.entry)
     },
   }))
-
-  const getState = () => ({
-    ...state,
-    matches(...values) {
-      const current = state.get()
-      return values.includes(current)
-    },
-    hasTag(tag) {
-      const current = state.get()
-      return !!machine.states[current]?.tags?.includes(tag)
-    },
-  })
 
   let status = MachineStatus.NotStarted
 
@@ -274,25 +262,32 @@ export function useMachine(
   machine.watch?.(getParams())
 
   return {
-    state: getState(),
+    get state() {
+      return getState()
+    },
     send,
     context: ctx,
     prop,
-    scope: @scope,
+    get scope() {
+      return @scope
+    },
     refs,
     computed,
-    event: getEvent(),
+    get event() {
+      return getEvent()
+    },
     getStatus: () => status,
   } 
 }
 
-function access(userProps) {
-  return isFunction(userProps) ? userProps() : userProps;
+function useProp(value) {
+  return function get(key) {
+    return value()[key]
+  }
 }
 
-function createProp(props) {
-  return (key) => {
-    if (!key) return access(props)
-    return access(props)[key]
-  }
+function flush(fn: VoidFunction) {
+  flushSync(() => {
+    queueMicrotask(() => fn())
+  })
 }
