@@ -1,6 +1,6 @@
 import * as accordion from "@zag-js/accordion";
 import { normalizeProps, useMachine } from "./zag-ripple/index.ripple";
-import { effect, track, TrackedArray } from "ripple";
+import { track } from "ripple";
 
 
 const accordionData = [

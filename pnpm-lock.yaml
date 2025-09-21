@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  ripple@0.2.56:
+    hash: uzdyscqaklesvzvyhiuqum37mq
+    path: patches/ripple.patch
+
 dependencies:
   '@zag-js/accordion':
     specifier: ^1.24.2
@@ -22,7 +27,7 @@ dependencies:
     version: 1.24.2
   ripple:
     specifier: ^0.2.56
-    version: 0.2.56
+    version: 0.2.56(patch_hash=uzdyscqaklesvzvyhiuqum37mq)
 
 devDependencies:
   prettier:
@@ -630,7 +635,7 @@ packages:
     resolution: {integrity: sha512-V9plBAt3qjMlS1+nC8771KNf6oJ12gExvaxnNzN/9yVRLdTv/lc+oJlnSzrdYDAvBfTStPCoiaCOTmTs0adv7Q==}
     dev: false
 
-  /ripple@0.2.56:
+  /ripple@0.2.56(patch_hash=uzdyscqaklesvzvyhiuqum37mq):
     resolution: {integrity: sha512-74M96kLk6XmfKaw4ObiQCo2zBB5hBbIjUo3IL3O8nnmrdE9uM0OMXYgJdG7h8RO5r0VIjSxrydi/SQsKmeWXlg==}
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -642,6 +647,7 @@ packages:
       muggle-string: 0.4.1
       zimmerframe: 1.1.4
     dev: false
+    patched: true
 
   /rollup@4.52.0:
     resolution: {integrity: sha512-+IuescNkTJQgX7AkIDtITipZdIGcWF0pnVvZTWStiazUmcGA2ag8dfg0urest2XlXUi9kuhfQ+qmdc5Stc3z7g==}

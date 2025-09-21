@@ -1,6 +1,17 @@
 import { Accordion } from "./Accordion.ripple";
+import {track} from "ripple"
 
 export component App() {
+   let count = track(0);
+
+  const plus = { 
+    onClick() {
+      @count++
+    }
+  }
+
+		<span class='count'>{@count}</span>
+		<button {...plus}>{'+'}</button>
   <div class="container">
     <h1>{"RippleJS + Zag Accordion"}</h1>
     <Accordion />
