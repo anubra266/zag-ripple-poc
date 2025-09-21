@@ -10,20 +10,16 @@ const accordionData = [
 ]
 
 export component Accordion() {
-  let value = track("about")
-
-  effect(()=>{
-    //console.log({@value})
-  })
+  let value = track(["about"])
 
   let service = track(()=>useMachine(accordion.machine, {
     id: "accordion-1",
     defaultValue: ["about"],
 
     // comment out to be controlled
-    //value: [@value],
+    //value: @value,
     //onValueChange(details) {
-    //  @value = details.value[0]
+    //  @value = details.value
     //},
   }));
 
@@ -60,8 +56,8 @@ export component Accordion() {
     <button onClick={() => @api.setValue(["contact"])}>{"Set contact"}</button>
 
     <h2>{"Controlled"}</h2>
-    <button onClick={() => { @value = "home"; }}>{'Home'}</button>
-    <button onClick={() => { @value = "about"; }}>{'About'}</button>
-    <button onClick={() => { @value = "contact"; }}>{'Contact'}</button>
+    <button onClick={() => { @value = ["home"]; }}>{'Home'}</button>
+    <button onClick={() => { @value = ["about"]; }}>{'About'}</button>
+    <button onClick={() => { @value = ["contact"]; }}>{'Contact'}</button>
   </div>
 }
