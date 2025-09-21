@@ -1,6 +1,6 @@
-# Ripple Basic Template
+# ZagJS Adapter for Ripple (POC)
 
-A minimal Ripple application template with TypeScript and Vite.
+A POC Ripple application integrating ZagJS components.
 
 ## Getting Started
 
@@ -21,29 +21,7 @@ A minimal Ripple application template with TypeScript and Vite.
     npm run build
     ```
 
-## Code Formatting
-
-This template includes Prettier with the Ripple plugin for consistent code formatting.
-
-### Available Commands
-
-- `npm run format` - Format all files
-- `npm run format:check` - Check if files are formatted correctly
-
-### Configuration
-
-Prettier is configured in `.prettierrc` with the following settings:
-
-- Uses tabs for indentation
-- Single quotes for strings
-- 100 character line width
-- Includes the `prettier-plugin-ripple` for `.ripple` file formatting
-
-### VS Code Integration
-
-For the best development experience, install the [Prettier VS Code extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) and the [Ripple VS Code extension](https://marketplace.visualstudio.com/items?itemName=ripplejs.ripple-vscode-plugin).
-
 ## Learn More
 
 - [Ripple Documentation](https://github.com/trueadm/ripple)
-- [Vite Documentation](https://vitejs.dev/)
+- [ZagJS Documentation](http://zagjs.com/)
