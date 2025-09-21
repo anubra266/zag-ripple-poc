@@ -12,7 +12,9 @@ const accordionData = [
 export component Accordion() {
   let value = track(["about"])
 
-  let service = track(()=>useMachine(accordion.machine, {
+  // useMachine only needs to be a tracked object if you're using controlled values i.e. tracked values. But it doesn't hurt to have it when not using controlled values, so it's fine to always leave it as tracked.
+
+  let service = track(() => useMachine(accordion.machine, {
     id: "accordion-1",
     defaultValue: ["about"],
 
