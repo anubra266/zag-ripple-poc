@@ -1,27 +1,13 @@
-import { track } from "ripple"
+import { track } from "ripple";
 
-export function createRefs(initial = {}) {
-  let refs = track(initial)
-  
+export function createRefs(refs) {
+  const ref = { current: refs }
   return {
-    set(key, value) {
-      const current = { ...@refs }
-      current[key] = value
-      @refs = current
-    },
     get(key) {
-      return @refs[key]
+      return ref.current[key]
     },
-    has(key) {
-      return key in @refs
-    },
-    delete(key) {
-      const current = { ...@refs }
-      delete current[key]
-      @refs = current
-    },
-    clear() {
-      @refs = {}
+    set(key, value) {
+      ref.current[key] = value
     },
   }
 }

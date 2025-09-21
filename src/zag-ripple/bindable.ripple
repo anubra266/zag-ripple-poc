@@ -1,69 +1,49 @@
-import type { Bindable, BindableParams } from "@zag-js/core"
 import { isFunction } from "@zag-js/utils"
 import { track, effect } from "ripple"
 
-export function createBindable(props) {
-  const initial = props().value ?? props().defaultValue
-  const eq = props().isEqual ?? Object.is
+export function createBindable(propsGetter) {
+  // Create tracked state using RippleJS track - no need for manual block passing
+  let value = track(propsGetter().defaultValue)
+  let controlled = track(() => propsGetter().value !== undefined)
 
-  let value = track(initial)
-  let controlled = track(() => props().value !== undefined)
-
-  let valueRef = { current: @value }
-  let prevValue = { current: undefined }
-
-  // Update refs when value changes
+  // RippleJS effect to sync controlled state changes
   effect(() => {
-    const v = @controlled ? props().value : @value
-    valueRef = { current: v }
-    prevValue = { current: v }
+    if (@controlled && propsGetter().value !== @value) {
+      @value = propsGetter().value
+    }
   })
 
-  const set = (v) => {
-    const prev = prevValue.current
-    const next = isFunction(v) ? v(valueRef.current) : v
+  const setValue = (v) => {
+    const next = isFunction(v) ? v(@value) : v
+    const prev = @value
 
-    if (props().debug) {
-      console.log(`[bindable > ${props().debug}] setValue`, { next, prev })
+    if (propsGetter().debug) {
+      console.log(`[bindable > ${propsGetter().debug}] setValue`, { next, prev })
     }
 
-
-    if (!@controlled) @value = next
-    if (!eq(next, prev)) {
-      props().onChange?.(next, prev)
-    }
-  }
-
-  function get() {
-    return (@controlled ? props().value : @value)
-  }
-
-  return {
-    initial,
-    ref: valueRef,
-    get,
-    set,
-    invoke(nextValue, prevValue) {
-      props().onChange?.(nextValue, prevValue)
-    },
-    hash(value) {
-      return props().hash?.(value) ?? String(value)
-    },
-  }
-}
-
-createBindable.cleanup = (fn: VoidFunction) => {
-  effect(() => {
-    return fn
-  })
-}
-
-createBindable.ref = (defaultValue) => {
-  let value = track(defaultValue)
-  return {
-    get: () => @value,
-    set: (next) => {
+    if (!@controlled) {
       @value = next
+    }
+
+    const eq = propsGetter().isEqual || Object.is
+    if (!eq(next, prev)) {
+      const onChange = propsGetter().onChange
+      if (onChange) onChange(next, prev)
+    }
+  }
+
+  return {
+    initial: propsGetter().defaultValue,
+    ref: { get current() { return @value } },
+    get: () => @value,
+    set: setValue,
+    invoke: (nextValue, prevValue) => {
+      const onChange = propsGetter().onChange
+      if (onChange) onChange(nextValue, prevValue)
+    },
+    hash: (val) => {
+      const hashFn = propsGetter().hash
+      return hashFn ? hashFn(val) : String(val)
     },
   }
 }

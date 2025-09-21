@@ -1,6 +1,7 @@
 import * as accordion from "@zag-js/accordion";
 import { normalizeProps, useMachine } from "./zag-ripple/index.ripple";
-import { track } from "ripple";
+import { effect, track, TrackedArray } from "ripple";
+
 
 const accordionData = [
   { id: "home", label: "Home" },
@@ -9,12 +10,24 @@ const accordionData = [
 ]
 
 export component Accordion() {
-  let service = useMachine(accordion.machine, {
-    id: "accordion-1",
-    defaultValue: ["about"]
-  });
+  let value = track("about")
 
-  let api = track(() => accordion.connect(service, normalizeProps));
+  effect(()=>{
+    //console.log({@value})
+  })
+
+  let service = track(()=>useMachine(accordion.machine, {
+    id: "accordion-1",
+    defaultValue: ["about"],
+
+    // comment out to be controlled
+    //value: [@value],
+    onValueChange(details) {
+      //@value = details.value[0]
+    },
+  }));
+
+  let api = track(() => accordion.connect(@service, normalizeProps));
 
   <div class="accordion">
     <h1>{'Accordion Example'}</h1>
@@ -41,9 +54,14 @@ export component Accordion() {
     }
     </div>
 
+    <h2>{"Api Controls"}</h2>
     <button onClick={() => @api.setValue(["home"])}>{"Set home"}</button>
     <button onClick={() => @api.setValue(["about"])}>{"Set about"}</button>
     <button onClick={() => @api.setValue(["contact"])}>{"Set contact"}</button>
 
+    <h2>{"Controlled"}</h2>
+    <button onClick={() => { @value = "home"; }}>{'Home'}</button>
+    <button onClick={() => { @value = "about"; }}>{'About'}</button>
+    <button onClick={() => { @value = "contact"; }}>{'Contact'}</button>
   </div>
 }
