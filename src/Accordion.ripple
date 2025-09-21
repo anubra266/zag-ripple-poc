@@ -22,9 +22,9 @@ export component Accordion() {
 
     // comment out to be controlled
     //value: [@value],
-    onValueChange(details) {
-      //@value = details.value[0]
-    },
+    //onValueChange(details) {
+    //  @value = details.value[0]
+    //},
   }));
 
   let api = track(() => accordion.connect(@service, normalizeProps));
