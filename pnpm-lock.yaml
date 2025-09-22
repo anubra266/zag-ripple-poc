@@ -23,6 +23,9 @@ dependencies:
   ripple:
     specifier: ^0.2.59
     version: 0.2.59
+  zag-ripple:
+    specifier: ^0.0.1
+    version: 0.0.1
 
 devDependencies:
   prettier:
@@ -743,6 +746,14 @@ packages:
     optionalDependencies:
       fsevents: 2.3.3
     dev: true
+
+  /zag-ripple@0.0.1:
+    resolution: {integrity: sha512-dfjxqaJHvftRQRFwRgYy/XhSoFzTaoTNuGWySuFIDuDbeE/R5u94jS+gKOVF267omIy/OK/FvHFGApwVU6Y/jA==}
+    dependencies:
+      '@zag-js/core': 1.24.2
+      '@zag-js/types': 1.24.2
+      '@zag-js/utils': 1.24.2
+    dev: false
 
   /zimmerframe@1.1.4:
     resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}

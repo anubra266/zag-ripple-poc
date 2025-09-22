@@ -1,5 +1,5 @@
 import * as accordion from "@zag-js/accordion";
-import { normalizeProps, useMachine } from "./zag-ripple/index.ripple";
+import { normalizeProps, useMachine } from "zag-ripple";
 import { track } from "ripple";
 
 
@@ -18,7 +18,7 @@ export component Accordion() {
     id: "accordion-1",
     defaultValue: ["about"],
 
-    // comment out to be controlled
+    // uncomment for controlled
     //value: @value,
     //onValueChange(details) {
     //  @value = details.value
