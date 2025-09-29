@@ -19,7 +19,7 @@ export component Accordion() {
     defaultValue: ["about"],
 
     // uncomment for controlled
-    //value: @value,
+    //value,
     //onValueChange(details) {
     //  @value = details.value
     //},
